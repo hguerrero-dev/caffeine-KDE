@@ -8,7 +8,8 @@ If you ever wanted a **Caffeine alternative for KDE** that does *not* keep your 
 
 ## ✨ Features
 
-- 🟢 **Inhibit suspend, allow screen-off.** Uses `systemd-inhibit --what=sleep`, so only the sleep/hibernate path is blocked. Idle handling (screen blanking, screensaver, lock) is left alone — just like macOS Amphetamine's "Allow display sleep" option.
+- 🟢 **Inhibit suspend, allow screen-off** by default. Uses `systemd-inhibit --what=sleep`, so only the sleep/hibernate path is blocked. Idle handling (screen blanking, screensaver, lock) is left alone — just like macOS Amphetamine's "Allow display sleep" option.
+- 🌗 **"Allow display to sleep" switch** in the popup. Flip it off and the widget also inhibits idle (`--what=sleep:idle`) so the screen stays on too. Setting persists across reboots and can be switched live while active.
 - 🖱️ **One-click toggle from the panel.** Left-click for popup with status, middle-click to toggle directly from the system tray.
 - 🧊 **Tiny footprint.** No background daemon written by us — Plasma + systemd do all the work. The widget just calls `systemctl --user start/stop` on a small unit file.
 - 🔁 **Survives panel reloads.** State is owned by a user systemd unit, so the inhibit doesn't vanish when Plasma restarts.
@@ -75,11 +76,18 @@ After adding the widget to your panel:
 You can also drive it from a terminal — handy for shell aliases, keybindings, or scripts:
 
 ```bash
-systemctl --user start  keep-awake.service   # turn on
-systemctl --user stop   keep-awake.service   # turn off
-systemctl --user is-active keep-awake.service
+# Default mode: inhibit suspend, screen can still sleep
+systemctl --user start  keep-awake.service
+systemctl --user stop   keep-awake.service
+
+# "Display stays on" mode: inhibit suspend AND idle
+systemctl --user start  keep-awake-full.service
+systemctl --user stop   keep-awake-full.service
+
 systemd-inhibit --list | grep keep-awake     # see the active lock
 ```
+
+In the widget's popup, the **Allow display to sleep** switch selects which of the two services runs. Off = screen stays on (`--what=sleep:idle`), on = screen can sleep (`--what=sleep`). The setting is remembered.
 
 Bind a global shortcut in **System Settings → Shortcuts → Custom Shortcuts** if you want a hotkey.
 
@@ -95,11 +103,17 @@ Bind a global shortcut in **System Settings → Shortcuts → Custom Shortcuts**
         └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-The whole "daemon" is one line:
+There are two tiny user units, each one line:
 
 ```ini
-ExecStart=/usr/bin/systemd-inhibit --what=sleep --who=keep-awake --why=user-request --mode=block sleep infinity
+# keep-awake.service        — inhibit suspend, allow screen-off (default)
+ExecStart=/usr/bin/systemd-inhibit --what=sleep      --who=keep-awake --why=user-request --mode=block sleep infinity
+
+# keep-awake-full.service   — inhibit suspend AND screen-off
+ExecStart=/usr/bin/systemd-inhibit --what=sleep:idle --who=keep-awake --why=user-request --mode=block sleep infinity
 ```
+
+Only one of the two runs at a time. The widget picks the right one based on the **Allow display to sleep** switch.
 
 `systemd-inhibit` documents these inhibition types ([man page](https://www.freedesktop.org/software/systemd/man/latest/systemd-inhibit.html)):
 
@@ -159,8 +173,8 @@ Not supported. The QML uses `org.kde.plasma.plasmoid` (the Plasma 6 PlasmoidItem
 Or manually:
 
 ```bash
-systemctl --user stop keep-awake.service
-rm ~/.config/systemd/user/keep-awake.service
+systemctl --user stop keep-awake.service keep-awake-full.service
+rm ~/.config/systemd/user/keep-awake.service ~/.config/systemd/user/keep-awake-full.service
 systemctl --user daemon-reload
 kpackagetool6 --type Plasma/Applet --remove com.burakgon.keepawake
 ```
@@ -173,6 +187,7 @@ PRs welcome — especially for:
 - Optional "Auto-on for N minutes/hours" timer mode, like Amphetamine sessions
 - Per-application triggers (auto-on while a specific app/window is focused)
 - Icon polish (a proper coffee-cup / pill icon set instead of `redshift-status-*`)
+- Global hotkey integration (System Settings → Shortcuts is currently the way; a built-in shortcut would be nicer)
 
 Open an issue first if it's a bigger change.
 

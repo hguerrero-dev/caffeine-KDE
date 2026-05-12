@@ -1,0 +1,11 @@
+[Unit]
+Description=Keep Awake — Full (inhibit suspend AND screen blanking)
+Documentation=man:systemd-inhibit(1)
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/systemd-inhibit --what=sleep:idle --who=keep-awake --why=user-request --mode=block sleep infinity
+Restart=no
+
+[Install]
+WantedBy=default.target

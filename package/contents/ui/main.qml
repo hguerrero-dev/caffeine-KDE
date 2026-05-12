@@ -10,25 +10,35 @@ import org.kde.plasma.plasma5support as Plasma5Support
 PlasmoidItem {
     id: root
 
-    property bool active: false
+    // ---- state ----
+    property bool sleepOnly: false   // keep-awake.service active        (display can sleep)
+    property bool fullOn:    false   // keep-awake-full.service active   (display stays on)
     property bool busy: false
 
-    readonly property string activeIcon: "redshift-status-on"
+    readonly property bool active: sleepOnly || fullOn
+    readonly property bool allowDisplaySleep: Plasmoid.configuration.allowDisplaySleep
+
+    readonly property string activeIcon:   "redshift-status-on"
     readonly property string inactiveIcon: "redshift-status-off"
 
-    readonly property string checkCmd: "systemctl --user is-active keep-awake.service"
-    readonly property string startCmd: "systemctl --user start keep-awake.service"
-    readonly property string stopCmd:  "systemctl --user stop keep-awake.service"
+    readonly property string svcSleep: "keep-awake.service"
+    readonly property string svcFull:  "keep-awake-full.service"
+
+    readonly property string checkSleep: "systemctl --user is-active " + svcSleep
+    readonly property string checkFull:  "systemctl --user is-active " + svcFull
 
     Plasmoid.icon: active ? activeIcon : inactiveIcon
     Plasmoid.status: active ? PlasmaCore.Types.ActiveStatus
                             : PlasmaCore.Types.PassiveStatus
 
     toolTipMainText: i18n("Keep Awake")
-    toolTipSubText: active
-        ? i18n("Active — system will not sleep (screen can still turn off)")
-        : i18n("Inactive — normal power management")
+    toolTipSubText: !active
+        ? i18n("Inactive — normal power management")
+        : (fullOn
+            ? i18n("Active — system and display stay awake")
+            : i18n("Active — system will not sleep (screen can still turn off)"))
 
+    // ---- runner ----
     Plasma5Support.DataSource {
         id: runner
         engine: "executable"
@@ -36,11 +46,12 @@ PlasmoidItem {
 
         onNewData: function(sourceName, data) {
             const stdout = (data["stdout"] !== undefined ? data["stdout"] : "").toString().trim()
-            const exitCode = data["exit code"]
             disconnectSource(sourceName)
 
-            if (sourceName === root.checkCmd) {
-                root.active = (stdout === "active")
+            if (sourceName === root.checkSleep) {
+                root.sleepOnly = (stdout === "active")
+            } else if (sourceName === root.checkFull) {
+                root.fullOn = (stdout === "active")
             } else {
                 // start/stop finished — re-poll state shortly after
                 root.busy = false
@@ -49,20 +60,43 @@ PlasmoidItem {
         }
 
         function run(cmd) {
-            // Ensure a fresh run even if the same command was queried recently
             disconnectSource(cmd)
             connectSource(cmd)
         }
     }
 
     function refresh() {
-        runner.run(checkCmd)
+        runner.run(checkSleep)
+        runner.run(checkFull)
+    }
+
+    function targetService() {
+        return allowDisplaySleep ? svcSleep : svcFull
+    }
+
+    function otherService() {
+        return allowDisplaySleep ? svcFull : svcSleep
     }
 
     function toggle() {
         if (busy) return
         busy = true
-        runner.run(active ? stopCmd : startCmd)
+        if (active) {
+            // Stop whatever is running
+            if (sleepOnly) runner.run("systemctl --user stop " + svcSleep)
+            if (fullOn)    runner.run("systemctl --user stop " + svcFull)
+        } else {
+            runner.run("systemctl --user start " + targetService())
+        }
+    }
+
+    // If the user flips "Allow display to sleep" while active, switch services live.
+    onAllowDisplaySleepChanged: {
+        if (!active || busy) return
+        busy = true
+        // Stop the wrong one, start the right one.
+        runner.run("systemctl --user stop "  + otherService())
+        runner.run("systemctl --user start " + targetService())
     }
 
     Timer {
@@ -104,8 +138,8 @@ PlasmoidItem {
     }
 
     fullRepresentation: ColumnLayout {
-        Layout.preferredWidth: Kirigami.Units.gridUnit * 16
-        Layout.preferredHeight: Kirigami.Units.gridUnit * 11
+        Layout.preferredWidth: Kirigami.Units.gridUnit * 18
+        Layout.preferredHeight: Kirigami.Units.gridUnit * 14
         spacing: Kirigami.Units.smallSpacing
 
         Kirigami.Icon {
@@ -132,15 +166,52 @@ PlasmoidItem {
             wrapMode: Text.WordWrap
             horizontalAlignment: Text.AlignHCenter
             opacity: 0.7
-            text: root.active
-                ? i18n("Suspend is blocked. Screen can still turn off normally.")
-                : i18n("System will sleep according to power settings.")
+            text: !root.active
+                ? i18n("System will sleep according to power settings.")
+                : (root.fullOn
+                    ? i18n("Suspend and screen blanking are blocked.")
+                    : i18n("Suspend is blocked. Screen can still turn off normally."))
         }
 
         Item { Layout.fillHeight: true }
 
+        // ---- Allow display to sleep switch ----
+        RowLayout {
+            Layout.alignment: Qt.AlignHCenter
+            Layout.leftMargin: Kirigami.Units.largeSpacing
+            Layout.rightMargin: Kirigami.Units.largeSpacing
+            spacing: Kirigami.Units.smallSpacing
+
+            PlasmaComponents.Label {
+                text: i18n("Allow display to sleep")
+            }
+
+            Item { Layout.fillWidth: true }
+
+            QQC2.Switch {
+                id: displaySleepSwitch
+                checked: root.allowDisplaySleep
+                onToggled: Plasmoid.configuration.allowDisplaySleep = checked
+            }
+        }
+
+        PlasmaComponents.Label {
+            Layout.alignment: Qt.AlignHCenter
+            Layout.fillWidth: true
+            Layout.leftMargin: Kirigami.Units.largeSpacing
+            Layout.rightMargin: Kirigami.Units.largeSpacing
+            wrapMode: Text.WordWrap
+            horizontalAlignment: Text.AlignHCenter
+            opacity: 0.55
+            font.pixelSize: Kirigami.Theme.smallFont.pixelSize
+            text: root.allowDisplaySleep
+                ? i18n("Screen will turn off per Power Management settings.")
+                : i18n("Screen will stay on while Keep Awake is active.")
+        }
+
         QQC2.Button {
             Layout.alignment: Qt.AlignHCenter
+            Layout.topMargin: Kirigami.Units.smallSpacing
             Layout.bottomMargin: Kirigami.Units.largeSpacing
             enabled: !root.busy
             text: root.active ? i18n("Turn Off") : i18n("Turn On")
