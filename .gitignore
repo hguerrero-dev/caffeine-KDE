@@ -1,0 +1,8 @@
+*.kdev4
+.kdev4/
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+build/
