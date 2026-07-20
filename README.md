@@ -113,7 +113,7 @@ ExecStart=/usr/bin/systemd-inhibit --what=sleep      --who=keep-awake --why=user
 ExecStart=/usr/bin/systemd-inhibit --what=sleep:idle --who=keep-awake --why=user-request --mode=block sleep infinity
 ```
 
-Only one of the two runs at a time. The widget picks the right one based on the **Allow display to sleep** switch.
+Only one of the two runs at a time. The units declare a mutual systemd `Conflicts=` relationship, so starting either service also stops the other—even when they are controlled directly from a terminal. The widget picks the right one based on the **Allow display to sleep** switch.
 
 `systemd-inhibit` documents these inhibition types ([man page](https://www.freedesktop.org/software/systemd/man/latest/systemd-inhibit.html)):
 

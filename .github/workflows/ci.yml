@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check shell scripts
+        run: |
+          bash -n install.sh uninstall.sh
+          shellcheck install.sh uninstall.sh
+      - name: Validate package metadata
+        run: |
+          python3 -m json.tool package/metadata.json >/dev/null
+          python3 -c 'import xml.etree.ElementTree as ET; ET.parse("package/contents/config/main.xml")'
+      - name: Verify systemd units
+        run: systemd-analyze verify systemd/keep-awake.service systemd/keep-awake-full.service
+      - name: Check mutual exclusion contract
+        run: |
+          grep -Fxq 'Conflicts=keep-awake-full.service' systemd/keep-awake.service
+          grep -Fxq 'Conflicts=keep-awake.service' systemd/keep-awake-full.service
