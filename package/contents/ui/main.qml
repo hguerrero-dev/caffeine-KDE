@@ -74,17 +74,12 @@ PlasmoidItem {
         return allowDisplaySleep ? svcSleep : svcFull
     }
 
-    function otherService() {
-        return allowDisplaySleep ? svcFull : svcSleep
-    }
-
     function toggle() {
         if (busy) return
         busy = true
         if (active) {
-            // Stop whatever is running
-            if (sleepOnly) runner.run("systemctl --user stop " + svcSleep)
-            if (fullOn)    runner.run("systemctl --user stop " + svcFull)
+            // One command keeps busy true until both services are stopped.
+            runner.run("systemctl --user stop " + svcSleep + " " + svcFull)
         } else {
             runner.run("systemctl --user start " + targetService())
         }
@@ -94,8 +89,8 @@ PlasmoidItem {
     onAllowDisplaySleepChanged: {
         if (!active || busy) return
         busy = true
-        // Stop the wrong one, start the right one.
-        runner.run("systemctl --user stop "  + otherService())
+        // The units conflict, so starting the target stops the other service
+        // in the same systemd transaction.
         runner.run("systemctl --user start " + targetService())
     }
 

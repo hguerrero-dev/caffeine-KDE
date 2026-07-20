@@ -1,6 +1,7 @@
 [Unit]
 Description=Keep Awake (inhibit suspend, allow screen blanking)
 Documentation=man:systemd-inhibit(1)
+Conflicts=keep-awake-full.service
 
 [Service]
 Type=simple
