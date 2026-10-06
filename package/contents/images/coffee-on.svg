@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- Steam / humo: bright orange, visible on light AND dark panels -->
+  <g fill="none" stroke="#ff7a1a" stroke-width="4" stroke-linecap="round">
+    <path d="M23 17 c-2.5 -3 2.5 -4.8 0 -7.8 c-1.6 -2 1.2 -3.4 0.5 -5.7"/>
+    <path d="M32 18 c-2.5 -3 2.5 -4.8 0 -7.8 c-1.6 -2 1.2 -3.4 0.5 -5.7"/>
+    <path d="M41 17 c-2.5 -3 2.5 -4.8 0 -7.8 c-1.6 -2 1.2 -3.4 0.5 -5.7"/>
+  </g>
+  <!-- Saucer -->
+  <ellipse cx="30" cy="52" rx="20" ry="5" fill="#8e8e8e" stroke="#2b2b2b" stroke-width="2.5"/>
+  <!-- Cup body: solid amber-brown, thick dark outline -->
+  <path d="M12 24 h36 l-4 19 c-0.6 3.2 -3 5.5 -6.2 5.5 H20.2 c-3.2 0 -5.6 -2.3 -6.2 -5.5 Z"
+        fill="#b26a1f" stroke="#2d1a08" stroke-width="4" stroke-linejoin="round"/>
+  <!-- Coffee surface: very dark -->
+  <ellipse cx="30" cy="24" rx="18" ry="5" fill="#2d1a08"/>
+  <ellipse cx="30" cy="24" rx="11.5" ry="2.8" fill="#6b4423"/>
+  <!-- Handle -->
+  <path d="M48 27.5 c6.5 0 9.5 3 8.5 7.2 c-1 4.2 -4.5 6.3 -9.5 6.3"
+        fill="none" stroke="#2d1a08" stroke-width="5.5" stroke-linecap="round"/>
+  <path d="M48 27.5 c6.5 0 9.5 3 8.5 7.2 c-1 4.2 -4.5 6.3 -9.5 6.3"
+        fill="none" stroke="#b26a1f" stroke-width="2" stroke-linecap="round"/>
+  <!-- Highlight -->
+  <path d="M18.5 29.5 L16.2 42" stroke="#ffd9a0" stroke-width="2.5" stroke-linecap="round" opacity="0.8"/>
+</svg>

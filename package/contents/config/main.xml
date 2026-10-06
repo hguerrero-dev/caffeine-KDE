@@ -5,9 +5,5 @@
                           http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
     <kcfgfile name=""/>
     <group name="General">
-        <entry name="allowDisplaySleep" type="Bool">
-            <label>Allow the display to turn off while Keep Awake is on.</label>
-            <default>true</default>
-        </entry>
     </group>
 </kcfg>

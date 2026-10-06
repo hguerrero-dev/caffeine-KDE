@@ -3,17 +3,16 @@
     "KPlugin": {
         "Authors": [
             {
-                "Email": "burakgon@icloud.com",
-                "Name": "Burak"
+                "Name": "hguerrero-dev"
             }
         ],
         "Category": "System Information",
-        "Description": "Prevent system sleep while allowing the screen to turn off (Amphetamine-style).",
-        "Icon": "redshift-status-on",
+        "Description": "One-click coffee cup to keep the system and screen awake. Super+Alt+C toggles it too.",
+        "Icon": "preferences-system-power-management",
         "Id": "com.burakgon.keepawake",
         "License": "MIT",
-        "Name": "Keep Awake",
-        "Version": "1.1.0"
+        "Name": "Caffeine KDE",
+        "Version": "2.0.0"
     },
     "X-Plasma-API-Minimum-Version": "6.0"
 }

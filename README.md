@@ -1,200 +1,186 @@
-# Keep Awake — KDE Plasma 6 Widget (Amphetamine for Linux / KDE)
+# ☕ Caffeine KDE
 
-> An **Amphetamine-style** toggle for **KDE Plasma 6**. Prevents your system from going to sleep — **while still letting the screen turn off**. Lightweight, no daemon of its own, just a thin UI on top of `systemd-inhibit`.
+Widget para **KDE Plasma 6** con forma de **taza de café** que evita que tu
+computadora se suspenda y que la pantalla se apague. Un clic (o un atajo de
+teclado) y listo.
 
-If you ever wanted a **Caffeine alternative for KDE** that does *not* keep your display blazing all night, this is it.
+- **Apagado:** taza sola → todo normal, la pantalla se puede apagar y el equipo suspender.
+- **Encendido:** taza con humo naranja → el sistema **no** se suspende y la pantalla **no** se apaga.
+
+> Fork de [keep-awake-kde](https://github.com/burakgon/keep-awake-kde) de Burak,
+> rediseñado: icono de café propio, toggle con un solo clic (sin popup),
+> atajo global de teclado e instalador único que hace todo.
 
 ---
 
-## ✨ Features
+## ✨ Características
 
-- 🟢 **Inhibit suspend, allow screen-off** by default. Uses `systemd-inhibit --what=sleep`, so only the sleep/hibernate path is blocked. Idle handling (screen blanking, screensaver, lock) is left alone — just like macOS Amphetamine's "Allow display sleep" option.
-- 🌗 **"Allow display to sleep" switch** in the popup. Flip it off and the widget also inhibits idle (`--what=sleep:idle`) so the screen stays on too. Setting persists across reboots and can be switched live while active.
-- 🖱️ **One-click toggle from the panel.** Left-click for popup with status, middle-click to toggle directly from the system tray.
-- 🧊 **Tiny footprint.** No background daemon written by us — Plasma + systemd do all the work. The widget just calls `systemctl --user start/stop` on a small unit file.
-- 🔁 **Survives panel reloads.** State is owned by a user systemd unit, so the inhibit doesn't vanish when Plasma restarts.
-- 🎨 **Native Plasma 6 look.** Built with Plasma's QML APIs (Kirigami, PlasmaComponents). Respects your theme and panel size.
-- 🆓 **MIT licensed.**
+- 🖱️ **Un solo clic** en la taza para encender/apagar. Sin ventanas ni menús.
+- ⌨️ **Atajo global `Super + Alt + C`** que funciona desde cualquier aplicación.
+- 🔄 **El icono se actualiza solo**: si cambias el estado con el clic, el atajo o la terminal, la taza lo refleja en ~2 segundos.
+- 🖥️ **Vista completa**: si agregas el widget al escritorio verás una tarjeta grande con botón Encender/Apagar.
+- 🧊 **Liviano**: sin demonios propios. Todo el trabajo lo hacen `systemd` y Plasma; el widget solo enciende/apaga servicios.
+- 🛠️ **Un solo instalador**: `./install.sh` hace absolutamente todo.
 
-## 🤔 Why this exists
+## ✅ Requisitos
 
-KDE Plasma's built-in **"Block Sleep and Screen Locking"** toggle does exactly what it says — it blocks *both*. There is no first-party way (in Plasma 6 as of this writing) to keep the machine awake but let the display power off after the usual idle timeout.
+- **KDE Plasma 6** (probado en Plasma 6.7, Fedora / Wayland).
+- `systemd` con user manager (estándar en casi todas las distros).
+- `kpackagetool6` (viene con Plasma 6).
+- `python3` + `dbus-python` (para registrar el atajo; casi siempre ya instalados).
+- `git` para clonar el repo.
 
-On macOS, [**Amphetamine**](https://apps.apple.com/us/app/amphetamine/id937984704) solves this neatly: keep the Mac awake, but let the screen sleep. On Linux there's [**Stimulator**](https://flathub.org/apps/io.github.sigmasd.stimulator) (works, but lives in its own window), and there's the venerable [**Caffeine**](https://github.com/caffeine-ng/caffeine-ng) (great, but historically keeps the display on too).
-
-**Keep Awake** is a tiny native Plasma widget that just toggles a `systemd-inhibit --what=sleep` lock from the panel. That's the whole idea.
-
-## 📦 Install
-
-### One-liner (recommended)
+## 📦 Instalación paso a paso
 
 ```bash
-git clone https://github.com/burakgon/keep-awake-kde.git
-cd keep-awake-kde
+git clone git@github.com:hguerrero-dev/caffeine-KDE.git
+cd caffeine-KDE
 ./install.sh
 ```
 
-That script does two things:
+Eso es todo. El script hace **5 pasos** automáticamente:
 
-1. Drops `~/.config/systemd/user/keep-awake.service` and reloads the user systemd manager.
-2. Installs the plasmoid via `kpackagetool6` into `~/.local/share/plasma/plasmoids/`.
+| Paso | Qué hace |
+| ---- | -------- |
+| 1/5 | Copia los servicios `keep-awake.service` y `keep-awake-full.service` a `~/.config/systemd/user/` y recarga systemd. |
+| 2/5 | Instala o actualiza el widget con `kpackagetool6` en `~/.local/share/plasma/plasmoids/`. |
+| 3/5 | Instala el comando `keep-awake-toggle` en `~/.local/bin/`. |
+| 4/5 | Crea el lanzador `.desktop`, lo registra en `kglobalshortcutsrc` y lo **activa en caliente** con `Super + Alt + C` (sin cerrar sesión). |
+| 5/5 | Te pregunta si quieres reiniciar Plasma para recargar el widget al instante. |
 
-Then **right-click your panel → Add Widgets → search "Keep Awake"** and drag it where you want it.
+Después agrega el widget a tu barra:
 
-### Manual install
+1. Clic derecho en el panel → **Add or Manage Widgets**.
+2. Busca **Caffeine KDE** → **Add**.
+3. Cierra el editor. Verás la taza marrón ☕.
 
-```bash
-# 1. systemd user unit
-mkdir -p ~/.config/systemd/user
-cp systemd/keep-awake.service ~/.config/systemd/user/
-systemctl --user daemon-reload
+> Puedes correr `./install.sh` cuantas veces quieras: es **idempotente** (no duplica nada).
 
-# 2. plasmoid
-kpackagetool6 --type Plasma/Applet --install ./package
-# or, if already installed:
-kpackagetool6 --type Plasma/Applet --upgrade ./package
-```
-
-### Requirements
-
-- **KDE Plasma 6** (Plasma 5 is not supported — the QML uses Plasma 6 imports)
-- `systemd` with a working user manager (default on every modern systemd distro)
-- `kpackagetool6` (ships with Plasma 6)
-
-Tested on Arch / CachyOS with Plasma 6.6. Should work on Fedora KDE Spin, openSUSE Tumbleweed, KDE Neon, Kubuntu 24.04+, EndeavourOS, Manjaro KDE.
-
-## 🚀 Usage
-
-After adding the widget to your panel:
-
-| Action | Result |
-| --- | --- |
-| **Left-click** the tray icon | Opens a popup with status + Turn On/Off button |
-| **Middle-click** the tray icon | Toggles immediately, no popup |
-| Hover the icon | Tooltip shows current state |
-
-You can also drive it from a terminal — handy for shell aliases, keybindings, or scripts:
+### Cambiar la tecla del atajo
 
 ```bash
-# Default mode: inhibit suspend, screen can still sleep
-systemctl --user start  keep-awake.service
-systemctl --user stop   keep-awake.service
-
-# "Display stays on" mode: inhibit suspend AND idle
-systemctl --user start  keep-awake-full.service
-systemctl --user stop   keep-awake-full.service
-
-systemd-inhibit --list | grep keep-awake     # see the active lock
+SHORTCUT_KEY="Meta+Alt+X" ./install.sh
+# o solo re-registrar la tecla:
+SHORTCUT_KEY="Meta+Alt+X" ./setup-shortcut.sh
 ```
 
-In the widget's popup, the **Allow display to sleep** switch selects which of the two services runs. Off = screen stays on (`--what=sleep:idle`), on = screen can sleep (`--what=sleep`). The setting is remembered.
+Verifica que la combinación esté libre antes (p. ej. `Super+Alt+K` ya la usa el cambio de idioma).
 
-Bind a global shortcut in **System Settings → Shortcuts → Custom Shortcuts** if you want a hotkey.
+## 🚀 Uso
 
-## 🛠️ How it works
+| Acción | Resultado |
+| ------ | --------- |
+| **Clic izquierdo** en la taza | Alterna ON/OFF |
+| **Clic central** en la taza | Alterna ON/OFF |
+| **Clic derecho** en la taza | Menú con Encender/Apagar |
+| **`Super + Alt + C`** en cualquier lado | Alterna ON/OFF |
+| Pasar el mouse por encima | Tooltip con el estado actual |
 
-```
-┌──────────────────┐   start/stop   ┌──────────────────────────┐   acquires   ┌──────────────────┐
-│  Plasma widget   │ ─────────────▶ │ keep-awake.service       │ ───────────▶ │ logind inhibit   │
-│  (QML + Kirigami)│                │ (user systemd unit)      │              │ lock --what=sleep│
-└──────────────────┘                └──────────────────────────┘              └──────────────────┘
-        ▲                                                                              │
-        │                          poll: systemctl --user is-active                    │
-        └──────────────────────────────────────────────────────────────────────────────┘
-```
-
-There are two tiny user units, each one line:
-
-```ini
-# keep-awake.service        — inhibit suspend, allow screen-off (default)
-ExecStart=/usr/bin/systemd-inhibit --what=sleep      --who=keep-awake --why=user-request --mode=block sleep infinity
-
-# keep-awake-full.service   — inhibit suspend AND screen-off
-ExecStart=/usr/bin/systemd-inhibit --what=sleep:idle --who=keep-awake --why=user-request --mode=block sleep infinity
-```
-
-Only one of the two runs at a time. The units declare a mutual systemd `Conflicts=` relationship, so starting either service also stops the other—even when they are controlled directly from a terminal. The widget picks the right one based on the **Allow display to sleep** switch.
-
-`systemd-inhibit` documents these inhibition types ([man page](https://www.freedesktop.org/software/systemd/man/latest/systemd-inhibit.html)):
-
-- `sleep` — block suspend / hibernate
-- `idle` — block automatic idle detection (this is what dims/blanks the screen)
-- `shutdown` — block reboot/poweroff
-
-We deliberately take **only `sleep`**, leaving `idle` free. So your screen-off / lock-screen / screensaver behavior is unaffected.
-
-## 🆚 Comparison
-
-| | Keep Awake (this) | KDE built-in "Block Sleep" | [Stimulator](https://flathub.org/apps/io.github.sigmasd.stimulator) | [Caffeine-ng](https://github.com/caffeine-ng/caffeine-ng) | `systemd-inhibit` CLI |
-| --- | --- | --- | --- | --- | --- |
-| Native Plasma widget | ✅ | ✅ | ❌ (standalone window) | ⚠️ tray indicator | ❌ |
-| Lets screen turn off | ✅ | ❌ | ✅ (separate toggle) | ✅ (v1.2+) | ✅ (`--what=sleep`) |
-| Survives panel reload | ✅ (systemd) | ✅ | ❌ | ⚠️ | ✅ |
-| No external runtime | ✅ | ✅ | ❌ (Flatpak) | ❌ (Python) | ✅ |
-
-## 🧪 Verify it's doing what you think
-
-KDE's Powerdevil has had quirks around respecting `systemd-inhibit` ([bug 457859](https://bugs.kde.org/show_bug.cgi?id=457859), [bug 464119](https://bugs.kde.org/show_bug.cgi?id=464119)). Run this sanity check on your machine:
-
-1. System Settings → Power Management → set **Turn off screen** to 1 min, **Suspend session** to 2 min.
-2. Turn the widget **on**.
-3. Walk away for 3 minutes.
-
-You should see the screen go black around 1 min, but the system should still be awake when you come back (mouse-wiggle wakes the display instantly, no resume-from-suspend lag, no lid-light cycle).
+Desde terminal (útil para alias, scripts o gestos):
 
 ```bash
-# while it's running, sanity-check the lock exists:
-systemd-inhibit --list | grep keep-awake
+keep-awake-toggle                                  # alterna
+systemctl --user start keep-awake-full.service     # forzar ON
+systemctl --user stop keep-awake.service keep-awake-full.service   # forzar OFF
+systemd-inhibit --list | grep keep-awake           # ver el bloqueo activo
+systemctl --user is-active keep-awake-full.service # active = ON, inactive = OFF
 ```
 
-## ❓ FAQ
+## 🛠️ Cómo funciona
 
-**Does this drain my battery like a normal "caffeine" tool?**
-No more than necessary. The CPU still goes idle, the disk still parks, the display still turns off. We only block the *suspend* state transition.
+```
+ ┌──────────────┐  1 clic / atajo / comando   ┌──────────────────────────┐  systemd-inhibit  ┌──────────────┐
+ │ Widget QML   │ ─────────────────────────▶ │ keep-awake-full.service │ ────────────────▶ │ logind lock  │
+ │ (taza café)  │  systemctl --user           │ sleep infinity          │  --what=sleep:idle │ --mode=block │
+ └──────┬───────┘  start/stop                 └──────────────────────────┘                   └──────────────┘
+        │                ▲ polling cada 2 s: systemctl --user is-active
+        └────────────────┘
+```
 
-**Will it prevent the system from sleeping when I close the lid?**
-Yes, while the toggle is on. The inhibit lock blocks the suspend path regardless of trigger.
+- **ON** = corre `keep-awake-full.service`, que ejecuta
+  `systemd-inhibit --what=sleep:idle --mode=block sleep infinity`.
+  Se bloquea la suspensión **y** la detección de inactividad (la pantalla no se apaga).
+- **OFF** = ambos servicios detenidos, sin locks. Todo vuelve a lo normal.
+- El widget **no guarda estado propio**: cada 2 segundos pregunta a systemd
+  (`systemctl --user is-active ...`), así el icono siempre muestra la realidad
+  aunque cambies el estado desde otro lado.
+- El atajo global vive en KWin (`org.kde.kglobalaccel`) como componente
+  `keep-awake-toggle.desktop`, acción `_launch`, registrado por
+  `setup-shortcut.sh` vía D-Bus (sin cerrar sesión). Al presionarlo, KWin
+  ejecuta `keep-awake-toggle` y el widget lo refleja solo.
 
-**What happens at logout / reboot?**
-The user systemd service stops with the session, so the inhibit lock is released cleanly. State does **not** persist across reboots — you turn it on when you want it on.
+## 🧰 Con qué está hecho / herramientas
 
-**Will it work on Wayland / X11?**
-Both. It doesn't touch the display server; it only talks to systemd-logind.
+| Parte | Tecnología |
+| ----- | ---------- |
+| Interfaz del widget | **QML** (`QtQuick`, `QtQuick.Layouts`, `QtQuick.Controls`) + APIs de Plasma 6 (`org.kde.plasma.plasmoid`, `PlasmaCore`, `PlasmaComponents`, `Kirigami`) |
+| Lógica de encendido | `systemd` user units + `systemd-inhibit` (sin demonios propios) |
+| Instalación y toggle | **Bash** (`install.sh`, `uninstall.sh`, `toggle.sh`, `setup-shortcut.sh`) |
+| Registro del atajo | **Python 3** + `dbus-python` contra `org.kde.kglobalaccel` (KWin), config en `kglobalshortcutsrc`, lanzador `.desktop` |
+| Iconos | **SVG** propios (`package/contents/images/coffee-off.svg`, `coffee-on.svg`): taza marrón visible en paneles claros y oscuros, humo naranja solo en ON |
 
-**Plasma 5?**
-Not supported. The QML uses `org.kde.plasma.plasmoid` (the Plasma 6 PlasmoidItem API) and `org.kde.plasma.plasma5support`. Patches welcome if someone wants a Plasma 5 branch.
+### Estructura del repo
 
-## 🧹 Uninstall
+```
+caffeine-KDE/
+├── install.sh                        # instalador único (haz solo esto)
+├── uninstall.sh                      # desinstalador completo
+├── setup-shortcut.sh                 # registra el atajo (lo llama install.sh)
+├── toggle.sh                         # lógica on/off → se instala como keep-awake-toggle
+├── package/
+│   ├── metadata.json                 # nombre "Caffeine KDE", versión, icono
+│   └── contents/
+│       ├── ui/main.qml               # widget: taza + polling + tarjeta completa
+│       ├── images/coffee-off.svg     # taza sola (OFF)
+│       ├── images/coffee-on.svg      # taza con humo (ON)
+│       └── config/main.xml           # (reservado, sin opciones por ahora)
+├── systemd/
+│   ├── keep-awake.service            # compat: bloquea solo suspensión
+│   └── keep-awake-full.service       # el que se usa: bloquea suspensión + pantalla
+└── README.md
+```
+
+> Nota técnica: el ID interno del plasmoid (`com.burakgon.keepawake`) y los
+> nombres de los servicios se conservan del proyecto original a propósito,
+> para que actualizar no deje widgets fantasmas en el panel.
+
+## 🎨 Personalización
+
+- **Otra tecla**: `SHORTCUT_KEY="Meta+Alt+X" ./setup-shortcut.sh`.
+- **Otros iconos**: reemplaza los dos `.svg` en `package/contents/images/`
+  (mismo nombre de archivo) y corre `./install.sh`.
+- **Polling más rápido/lento**: cambia `interval: 2000` (ms) en `main.qml`.
+
+## 🧪 Verifica que hace lo que crees
+
+1. Ajustes → Energía: **apagar pantalla en 1 min**, **suspender en 2 min**.
+2. Activa la taza (clic o `Super+Alt+C`).
+3. Aléjate 3 minutos.
+4. La pantalla **no** debe apagarse. Con la taza apagada, sí se apaga normal.
+
+## 🧹 Desinstalación
 
 ```bash
 ./uninstall.sh
 ```
 
-Or manually:
+Detiene los servicios, borra units, widget, comando, lanzador y atajo.
+Quita el widget del panel si aún está ahí.
 
-```bash
-systemctl --user stop keep-awake.service keep-awake-full.service
-rm ~/.config/systemd/user/keep-awake.service ~/.config/systemd/user/keep-awake-full.service
-systemctl --user daemon-reload
-kpackagetool6 --type Plasma/Applet --remove com.burakgon.keepawake
-```
+## ❓ Problemas comunes
 
-## 🤝 Contributing
+- **Agrego el widget y sale un hueco en blanco**: tenías la versión vieja en
+  memoria. Reinicia Plasma (`systemctl --user restart plasma-plasmashell.service`),
+  quita el hueco y vuelve a agregar **Caffeine KDE**.
+- **El atajo no hace nada**: confirma que esté registrado con
+  `grep -A2 keep-awake-toggle ~/.config/kglobalshortcutsrc` y que la
+  combinación esté libre. Re-corre `./setup-shortcut.sh`.
+- **La pantalla igual se apaga estando ON**: algunos drivers/powerdevil
+  ignoran inhibits (bugs conocidos de KDE). Prueba con `systemd-inhibit --list`.
 
-PRs welcome — especially for:
+## 📄 Licencia y créditos
 
-- Translations (i18n strings are wrapped in `i18n(...)`)
-- Optional "Auto-on for N minutes/hours" timer mode, like Amphetamine sessions
-- Per-application triggers (auto-on while a specific app/window is focused)
-- Icon polish (a proper coffee-cup / pill icon set instead of `redshift-status-*`)
-- Global hotkey integration (System Settings → Shortcuts is currently the way; a built-in shortcut would be nicer)
-
-Open an issue first if it's a bigger change.
-
-## 📄 License
-
-[MIT](LICENSE). Do whatever you want with it; attribution appreciated.
-
----
-
-<sub>Keywords: KDE Plasma 6 widget, KDE plasmoid, KDE applet, Amphetamine for Linux, Amphetamine alternative Linux, Caffeine alternative KDE, prevent sleep Linux, keep awake Linux, inhibit suspend KDE, systemd-inhibit GUI, Linux power management widget, stay awake KDE, no sleep KDE, KDE Plasma extension.</sub>
+MIT (ver [LICENSE](LICENSE)).
+Proyecto original [keep-awake-kde](https://github.com/burakgon/keep-awake-kde)
+por Burak; modificaciones Caffeine KDE por
+[hguerrero-dev](https://github.com/hguerrero-dev).
